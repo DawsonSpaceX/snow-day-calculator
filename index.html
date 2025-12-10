@@ -248,6 +248,30 @@
       font-size: 1rem;
     }
 
+    .secondary-btn {
+      margin-top: 6px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.5);
+      background: rgba(15, 23, 42, 0.9);
+      box-shadow: none;
+      font-size: 0.78rem;
+      font-weight: 500;
+      display: inline-flex;
+      width: auto;
+      gap: 6px;
+    }
+
+    .secondary-btn:hover {
+      filter: brightness(1.05);
+      box-shadow: 0 0 0 1px rgba(148, 163, 184, 0.5);
+      transform: none;
+    }
+
+    .secondary-btn:active {
+      box-shadow: none;
+    }
+
     .result {
       margin-top: 16px;
       border-radius: 18px;
@@ -331,6 +355,7 @@
       justify-content: space-between;
       align-items: center;
       gap: 8px;
+      flex-wrap: wrap;
     }
 
     .footer span {
@@ -341,6 +366,16 @@
       font-size: 0.7rem;
       color: var(--muted);
       text-align: right;
+    }
+
+    .auto-status {
+      font-size: 0.7rem;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .auto-status.error {
+      color: var(--error);
     }
 
     @media (max-width: 480px) {
@@ -373,7 +408,7 @@
         </div>
         <h1>Snow Day Calculator 2.0</h1>
         <p class="subtitle">
-          A modern take on snow day predictions — no ancient-looking website required.
+          A modern take on snow day predictions — now with live forecast data.
         </p>
       </header>
 
@@ -385,12 +420,16 @@
           <input
             id="location"
             type="text"
-            placeholder="City or ZIP (just for your reference)"
+            placeholder="City or ZIP (e.g. Boston or 02108)"
             autocomplete="postal-code"
           />
           <p class="small-hint">
-            This doesn’t call any API yet — it’s just to label your result.
+            Type your city or ZIP, then tap “Use real forecast” to auto-fill the sliders.
           </p>
+          <button type="button" id="use-forecast" class="secondary-btn">
+            <span>🌎 Use real forecast for this location</span>
+          </button>
+          <p class="auto-status" id="auto-status"></p>
         </div>
 
         <div class="row-2">
@@ -419,7 +458,7 @@
 
         <div class="field-group">
           <label for="snow-amount">
-            <span>Snow in the forecast (inches)</span>
+            <span>Snow in the next day (inches)</span>
           </label>
           <div class="slider-row">
             <input
@@ -433,7 +472,7 @@
             <div class="slider-value" id="snow-value">3"</div>
           </div>
           <p class="small-hint">
-            Use whatever your weather app says for the next 24 hours.
+            You can keep adjusting this manually if you want to override the forecast.
           </p>
         </div>
 
@@ -504,6 +543,7 @@
 
       <div class="footer">
         <span>For fun only — not official school info.</span>
+        <span>Weather data by Open-Meteo.com</span>
         <div class="tagline">Built to beat the boomer snow day sites 😉</div>
       </div>
     </div>
@@ -518,6 +558,8 @@
     const snowValue = document.getElementById("snow-value");
     const tempRange = document.getElementById("low-temp");
     const tempValue = document.getElementById("temp-value");
+    const autoBtn = document.getElementById("use-forecast");
+    const autoStatus = document.getElementById("auto-status");
 
     snowValue.textContent = snowRange.value + '"';
     tempValue.textContent = tempRange.value + "°F";
@@ -528,6 +570,140 @@
 
     tempRange.addEventListener("input", () => {
       tempValue.textContent = tempRange.value + "°F";
+    });
+
+    async function fetchForecastForLocation(name) {
+      const geoUrl =
+        "https://geocoding-api.open-meteo.com/v1/search?name=" +
+        encodeURIComponent(name) +
+        "&count=1&language=en&format=json";
+
+      const geoRes = await fetch(geoUrl);
+      if (!geoRes.ok) {
+        throw new Error("Geocoding request failed");
+      }
+      const geoData = await geoRes.json();
+      if (!geoData.results || geoData.results.length === 0) {
+        throw new Error("Could not find that city or ZIP");
+      }
+
+      const place = geoData.results[0];
+
+      const forecastUrl =
+        "https://api.open-meteo.com/v1/forecast?latitude=" +
+        place.latitude +
+        "&longitude=" +
+        place.longitude +
+        "&hourly=snowfall,precipitation,temperature_2m" +
+        "&daily=snowfall_sum,precipitation_sum,temperature_2m_min" +
+        "&forecast_days=1&temperature_unit=fahrenheit&timezone=auto";
+
+      const wxRes = await fetch(forecastUrl);
+      if (!wxRes.ok) {
+        throw new Error("Weather request failed");
+      }
+      const wxData = await wxRes.json();
+      return { place, wxData };
+    }
+
+    function autoFillFromForecast(place, wxData) {
+      const daily = wxData.daily || {};
+      const hourly = wxData.hourly || {};
+
+      const snowfallMm = (daily.snowfall_sum && daily.snowfall_sum[0]) || 0;
+      const precipMm =
+        (daily.precipitation_sum && daily.precipitation_sum[0]) || 0;
+      const lowF =
+        (daily.temperature_2m_min && daily.temperature_2m_min[0]) || 32;
+
+      // Convert mm to inches for snow slider
+      const snowInches = snowfallMm / 25.4;
+      const sliderSnow = clamp(
+        Math.round(snowInches * 2) / 2,
+        parseFloat(snowRange.min),
+        parseFloat(snowRange.max)
+      );
+      snowRange.value = sliderSnow;
+      snowValue.textContent = sliderSnow + '"';
+
+      // Set overnight low temp slider
+      const sliderTemp = clamp(
+        Math.round(lowF),
+        parseFloat(tempRange.min),
+        parseFloat(tempRange.max)
+      );
+      tempRange.value = sliderTemp;
+      tempValue.textContent = sliderTemp + "°F";
+
+      // Guess ice risk
+      let iceRisk = "low";
+      if (precipMm > 0 && snowfallMm > 0 && snowfallMm < precipMm * 0.7) {
+        iceRisk = "medium";
+      }
+      if (precipMm > 0 && sliderTemp >= 28 && sliderTemp <= 34) {
+        iceRisk = "high";
+      }
+      document.getElementById("ice-risk").value = iceRisk;
+
+      // Figure out timing based on when precip is heaviest in first 24 hours
+      const times = hourly.time || [];
+      const snowfall = hourly.snowfall || [];
+      const precip = hourly.precipitation || [];
+
+      let maxIndex = 0;
+      let maxAmount = 0;
+      for (let i = 0; i < Math.min(times.length, 24); i++) {
+        const amount =
+          (typeof snowfall[i] === "number" ? snowfall[i] : 0) +
+          (typeof precip[i] === "number" ? precip[i] : 0);
+        if (amount > maxAmount) {
+          maxAmount = amount;
+          maxIndex = i;
+        }
+      }
+
+      let timing = "daytime";
+      if (times.length > 0) {
+        const t = times[maxIndex];
+        const hourStr = t.split("T")[1]?.slice(0, 2);
+        const hour = parseInt(hourStr, 10);
+        if (!Number.isNaN(hour)) {
+          if (hour <= 6) timing = "overnight";
+          else if (hour <= 11) timing = "morning";
+          else timing = "daytime";
+        }
+      }
+      document.getElementById("timing").value = timing;
+
+      // Update little status line
+      autoStatus.textContent =
+        "Using forecast for " +
+        (place.name || "your location") +
+        (place.country ? ", " + place.country : "") +
+        ". You can still tweak sliders.";
+      autoStatus.classList.remove("error");
+    }
+
+    autoBtn.addEventListener("click", async () => {
+      const locationInput = document.getElementById("location").value.trim();
+      if (!locationInput) {
+        autoStatus.textContent = "Type a city or ZIP first.";
+        autoStatus.classList.add("error");
+        return;
+      }
+
+      autoStatus.textContent = "Grabbing forecast…";
+      autoStatus.classList.remove("error");
+
+      try {
+        const { place, wxData } = await fetchForecastForLocation(locationInput);
+        autoFillFromForecast(place, wxData);
+      } catch (err) {
+        console.error(err);
+        autoStatus.textContent =
+          "Could not load weather for that location. You can still move sliders manually.";
+        autoStatus.classList.add("error");
+      }
     });
 
     const form = document.getElementById("snow-form");
@@ -563,7 +739,7 @@
       const cappedSnow = Math.min(snow, 14);
       const snowPoints = cappedSnow * 5; // up to ~70
       score += snowPoints;
-      notes.push(`${snow}" of snow in the forecast (+${snowPoints.toFixed(0)})`);
+      notes.push(snow + '" of snow in the forecast (+' + snowPoints.toFixed(0) + ")");
 
       // Ice risk
       let iceBonus = 0;
@@ -582,12 +758,12 @@
       let tempBonus = 0;
       if (temp <= 10) {
         tempBonus = 10;
-        notes.push(`Brutally cold (≤ ${temp}°F) (+10)`);
+        notes.push("Brutally cold (≤ " + temp + "°F) (+10)");
       } else if (temp <= 25) {
         tempBonus = 5;
-        notes.push(`Pretty cold (${temp}°F) (+5)`);
+        notes.push("Pretty cold (" + temp + "°F) (+5)");
       } else {
-        notes.push(`Not crazy cold (${temp}°F) (+0)`);
+        notes.push("Not crazy cold (" + temp + "°F) (+0)");
       }
       score += tempBonus;
 
