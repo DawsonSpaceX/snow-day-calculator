@@ -3,416 +3,29 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Next-Gen Snow Day Calculator</title>
-  <style>
-    :root {
-      --bg: #050816;
-      --card-bg: #0b1020;
-      --accent: #4f46e5;
-      --accent-soft: rgba(79, 70, 229, 0.14);
-      --text: #f9fafb;
-      --muted: #9ca3af;
-      --error: #f97373;
-      --radius-lg: 18px;
-      --radius-md: 10px;
-      --shadow-soft: 0 18px 45px rgba(0, 0, 0, 0.55);
-      --border-subtle: 1px solid rgba(148, 163, 184, 0.25);
-    }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-        sans-serif;
-    }
-
-    body {
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 16px;
-      background:
-        radial-gradient(circle at top, rgba(96, 165, 250, 0.2), transparent 55%),
-        radial-gradient(circle at bottom, rgba(59, 130, 246, 0.25), transparent 60%),
-        var(--bg);
-      color: var(--text);
-    }
-
-    .card {
-      width: 100%;
-      max-width: 500px;
-      background: linear-gradient(145deg, #020617, #020617, #020617, #020617);
-      border-radius: 24px;
-      padding: 22px 20px 18px;
-      box-shadow: var(--shadow-soft);
-      border: 1px solid rgba(148, 163, 184, 0.4);
-      position: relative;
-      overflow: hidden;
-    }
-
-    .card::before {
-      content: "";
-      position: absolute;
-      inset: -40%;
-      background:
-        radial-gradient(circle at 0 0, rgba(96, 165, 250, 0.23), transparent 60%),
-        radial-gradient(circle at 100% 0, rgba(110, 231, 183, 0.15), transparent 60%);
-      opacity: 0.6;
-      pointer-events: none;
-      mix-blend-mode: screen;
-    }
-
-    .card-inner {
-      position: relative;
-      z-index: 1;
-    }
-
-    header {
-      margin-bottom: 18px;
-    }
-
-    .badge-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 10px;
-      font-size: 0.75rem;
-      color: var(--muted);
-    }
-
-    .pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      border-radius: 999px;
-      padding: 4px 9px;
-      border: 1px solid rgba(148, 163, 184, 0.5);
-      background: rgba(15, 23, 42, 0.75);
-      backdrop-filter: blur(16px);
-    }
-
-    .pill-dot {
-      width: 7px;
-      height: 7px;
-      border-radius: 999px;
-      background: #22c55e;
-      box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.35);
-    }
-
-    h1 {
-      font-size: 1.4rem;
-      line-height: 1.2;
-      margin-bottom: 4px;
-    }
-
-    .subtitle {
-      font-size: 0.85rem;
-      color: var(--muted);
-    }
-
-    form {
-      margin-top: 14px;
-      border-radius: 18px;
-      padding: 14px 12px 12px;
-      background: rgba(15, 23, 42, 0.9);
-      border: 1px solid rgba(148, 163, 184, 0.35);
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .field-group {
-      display: grid;
-      gap: 4px;
-      font-size: 0.8rem;
-    }
-
-    label span {
-      color: var(--muted);
-      font-size: 0.8rem;
-    }
-
-    input[type="text"],
-    select {
-      width: 100%;
-      padding: 8px 9px;
-      border-radius: var(--radius-md);
-      border: 1px solid rgba(148, 163, 184, 0.6);
-      background: rgba(15, 23, 42, 0.95);
-      color: var(--text);
-      font-size: 0.85rem;
-      outline: none;
-      transition: border-color 0.12s ease, box-shadow 0.12s ease,
-        background 0.12s ease;
-    }
-
-    input[type="text"]:focus,
-    select:focus {
-      border-color: #60a5fa;
-      box-shadow: 0 0 0 1px rgba(96, 165, 250, 0.55);
-      background: rgba(15, 23, 42, 1);
-    }
-
-    .small-hint {
-      font-size: 0.7rem;
-      color: var(--muted);
-    }
-
-    .slider-row {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-top: 2px;
-    }
-
-    input[type="range"] {
-      flex: 1;
-      -webkit-appearance: none;
-      appearance: none;
-      height: 4px;
-      border-radius: 999px;
-      background: rgba(51, 65, 85, 0.85);
-      outline: none;
-    }
-
-    input[type="range"]::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      appearance: none;
-      width: 16px;
-      height: 16px;
-      border-radius: 50%;
-      background: var(--accent);
-      border: 2px solid #e5e7eb;
-      box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.45);
-      cursor: pointer;
-      margin-top: -6px;
-    }
-
-    input[type="range"]::-moz-range-thumb {
-      width: 16px;
-      height: 16px;
-      border-radius: 50%;
-      background: var(--accent);
-      border: 2px solid #e5e7eb;
-      box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.45);
-      cursor: pointer;
-    }
-
-    .slider-value {
-      min-width: 54px;
-      text-align: right;
-      font-size: 0.8rem;
-      color: var(--muted);
-    }
-
-    .row-2 {
-      display: grid;
-      grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
-      gap: 10px;
-    }
-
-    button {
-      margin-top: 6px;
-      width: 100%;
-      border: none;
-      padding: 9px 10px;
-      border-radius: 999px;
-      font-weight: 600;
-      font-size: 0.9rem;
-      cursor: pointer;
-      background: radial-gradient(circle at 0% 0%, #38bdf8, #4f46e5);
-      color: #f9fafb;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      box-shadow: 0 12px 25px rgba(37, 99, 235, 0.55);
-      transition: transform 0.1s ease, box-shadow 0.1s ease, filter 0.1s ease;
-    }
-
-    button:hover {
-      transform: translateY(-1px);
-      filter: brightness(1.05);
-      box-shadow: 0 16px 30px rgba(37, 99, 235, 0.7);
-    }
-
-    button:active {
-      transform: translateY(0);
-      box-shadow: 0 8px 20px rgba(37, 99, 235, 0.55);
-    }
-
-    .spark {
-      font-size: 1rem;
-    }
-
-    .secondary-btn {
-      margin-top: 6px;
-      padding: 6px 10px;
-      border-radius: 999px;
-      border: 1px solid rgba(148, 163, 184, 0.5);
-      background: rgba(15, 23, 42, 0.9);
-      box-shadow: none;
-      font-size: 0.78rem;
-      font-weight: 500;
-      display: inline-flex;
-      width: auto;
-      gap: 6px;
-    }
-
-    .secondary-btn:hover {
-      filter: brightness(1.05);
-      box-shadow: 0 0 0 1px rgba(148, 163, 184, 0.5);
-      transform: none;
-    }
-
-    .secondary-btn:active {
-      box-shadow: none;
-    }
-
-    .result {
-      margin-top: 16px;
-      border-radius: 18px;
-      padding: 12px 12px 10px;
-      background: rgba(15, 23, 42, 0.94);
-      border: 1px solid rgba(148, 163, 184, 0.4);
-      display: grid;
-      gap: 8px;
-    }
-
-    .result-top {
-      display: flex;
-      align-items: baseline;
-      justify-content: space-between;
-      gap: 14px;
-    }
-
-    .percent {
-      font-size: 1.9rem;
-      font-weight: 700;
-      letter-spacing: 0.02em;
-    }
-
-    .percent-label {
-      font-size: 0.72rem;
-      text-transform: uppercase;
-      letter-spacing: 0.16em;
-      color: var(--muted);
-    }
-
-    .verdict {
-      font-size: 0.9rem;
-    }
-
-    .chip-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-top: 4px;
-    }
-
-    .chip {
-      border-radius: 999px;
-      padding: 4px 9px;
-      font-size: 0.7rem;
-      border: 1px solid rgba(148, 163, 184, 0.5);
-      color: var(--muted);
-      background: rgba(15, 23, 42, 0.9);
-    }
-
-    .breakdown {
-      margin-top: 6px;
-      padding-top: 6px;
-      border-top: 1px dashed rgba(148, 163, 184, 0.5);
-    }
-
-    .breakdown-title {
-      font-size: 0.75rem;
-      text-transform: uppercase;
-      letter-spacing: 0.12em;
-      color: var(--muted);
-      margin-bottom: 4px;
-    }
-
-    .breakdown ul {
-      list-style: none;
-      display: grid;
-      gap: 2px;
-    }
-
-    .breakdown li {
-      font-size: 0.78rem;
-      color: #e5e7eb;
-    }
-
-    .footer {
-      margin-top: 12px;
-      font-size: 0.7rem;
-      color: var(--muted);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-
-    .footer span {
-      opacity: 0.85;
-    }
-
-    .tagline {
-      font-size: 0.7rem;
-      color: var(--muted);
-      text-align: right;
-    }
-
-    .auto-status {
-      font-size: 0.7rem;
-      color: var(--muted);
-      margin-top: 2px;
-    }
-
-    .auto-status.error {
-      color: var(--error);
-    }
-
-    @media (max-width: 480px) {
-      .card {
-        padding: 18px 14px 14px;
-        border-radius: 20px;
-      }
-      h1 {
-        font-size: 1.25rem;
-      }
-      .result-top {
-        flex-direction: column;
-        align-items: flex-start;
-      }
-    }
-  </style>
+  <title>Snow Day Calculator 2.0</title>
+  <link rel="stylesheet" href="styles.css" />
 </head>
-<body>
+<body class="theme-midnight">
   <div class="card">
     <div class="card-inner">
       <header>
         <div class="badge-row">
-          <div class="pill">
+          <div class="pill pill-live">
             <span class="pill-dot"></span>
-            <span>Live snow day vibes</span>
+            <span>Live Snow Day</span>
           </div>
-          <div class="pill">
-            <span>Gen-Z UI • Just for fun</span>
-          </div>
+          <button type="button" id="settings-toggle" class="settings-btn">
+            ⚙️ Settings
+          </button>
         </div>
         <h1>Snow Day Calculator 2.0</h1>
         <p class="subtitle">
-          A modern take on snow day predictions — now with live forecast data.
+          A modern take on snow day predictions — powered by live forecast data.
         </p>
       </header>
 
-      <form id="snow-form">
+      <form id="snow-form" autocomplete="off">
         <div class="field-group">
           <label for="location">
             <span>Where are you?</span>
@@ -420,15 +33,12 @@
           <input
             id="location"
             type="text"
-            placeholder="City or ZIP (e.g. Boston or 02108)"
+            placeholder="City or ZIP (e.g. Laingsburg or 48848)"
             autocomplete="postal-code"
           />
           <p class="small-hint">
-            Type your city or ZIP, then tap “Use real forecast” to auto-fill the sliders.
+            Start typing your city or ZIP — we’ll grab the forecast automatically.
           </p>
-          <button type="button" id="use-forecast" class="secondary-btn">
-            <span>🌎 Use real forecast for this location</span>
-          </button>
           <p class="auto-status" id="auto-status"></p>
         </div>
 
@@ -466,13 +76,13 @@
               type="range"
               min="0"
               max="18"
-              step="0.5"
+              step="0.1"
               value="3"
             />
             <div class="slider-value" id="snow-value">3"</div>
           </div>
           <p class="small-hint">
-            You can keep adjusting this manually if you want to override the forecast.
+            You can still tweak this manually if your weather app disagrees.
           </p>
         </div>
 
@@ -489,7 +99,7 @@
 
         <div class="field-group">
           <label for="low-temp">
-            <span>Overnight low (°F)</span>
+            <span>Overnight low (<span id="temp-unit-label">°F</span>)</span>
           </label>
           <div class="slider-row">
             <input
@@ -515,7 +125,7 @@
           </select>
         </div>
 
-        <button type="submit">
+        <button type="submit" id="calculate-btn">
           <span class="spark">❄️</span>
           <span>Calculate my snow day odds</span>
         </button>
@@ -542,303 +152,55 @@
       </section>
 
       <div class="footer">
-        <span>For fun only — not official school info.</span>
         <span>Weather data by Open-Meteo.com</span>
         <div class="tagline">Built to beat the boomer snow day sites 😉</div>
       </div>
     </div>
   </div>
 
-  <script>
-    function clamp(value, min, max) {
-      return Math.min(max, Math.max(min, value));
-    }
+  <div id="settings-panel" class="settings-panel" hidden>
+    <div class="settings-inner">
+      <div class="settings-header">
+        <h2>Settings</h2>
+        <button type="button" id="settings-close" class="settings-close">✕</button>
+      </div>
 
-    const snowRange = document.getElementById("snow-amount");
-    const snowValue = document.getElementById("snow-value");
-    const tempRange = document.getElementById("low-temp");
-    const tempValue = document.getElementById("temp-value");
-    const autoBtn = document.getElementById("use-forecast");
-    const autoStatus = document.getElementById("auto-status");
+      <div class="settings-group">
+        <p class="settings-label">Temperature unit</p>
+        <div class="settings-options">
+          <label>
+            <input type="radio" name="temp-unit" value="fahrenheit" checked />
+            <span>Fahrenheit (°F)</span>
+          </label>
+          <label>
+            <input type="radio" name="temp-unit" value="celsius" />
+            <span>Celsius (°C)</span>
+          </label>
+        </div>
+      </div>
 
-    snowValue.textContent = snowRange.value + '"';
-    tempValue.textContent = tempRange.value + "°F";
+      <div class="settings-group">
+        <p class="settings-label">Theme</p>
+        <div class="settings-options">
+          <label>
+            <input type="radio" name="theme" value="midnight" checked />
+            <span>Midnight</span>
+          </label>
+          <label>
+            <input type="radio" name="theme" value="frost" />
+            <span>Frost</span>
+          </label>
+          <label>
+            <input type="radio" name="theme" value="slate" />
+            <span>Slate</span>
+          </label>
+        </div>
+      </div>
+    </div>
+  </div>
 
-    snowRange.addEventListener("input", () => {
-      snowValue.textContent = snowRange.value + '"';
-    });
+  <div id="confetti-container"></div>
 
-    tempRange.addEventListener("input", () => {
-      tempValue.textContent = tempRange.value + "°F";
-    });
-
-    async function fetchForecastForLocation(name) {
-      const geoUrl =
-        "https://geocoding-api.open-meteo.com/v1/search?name=" +
-        encodeURIComponent(name) +
-        "&count=1&language=en&format=json";
-
-      const geoRes = await fetch(geoUrl);
-      if (!geoRes.ok) {
-        throw new Error("Geocoding request failed");
-      }
-      const geoData = await geoRes.json();
-      if (!geoData.results || geoData.results.length === 0) {
-        throw new Error("Could not find that city or ZIP");
-      }
-
-      const place = geoData.results[0];
-
-      const forecastUrl =
-        "https://api.open-meteo.com/v1/forecast?latitude=" +
-        place.latitude +
-        "&longitude=" +
-        place.longitude +
-        "&hourly=snowfall,precipitation,temperature_2m" +
-        "&daily=snowfall_sum,precipitation_sum,temperature_2m_min" +
-        "&forecast_days=1&temperature_unit=fahrenheit&timezone=auto";
-
-      const wxRes = await fetch(forecastUrl);
-      if (!wxRes.ok) {
-        throw new Error("Weather request failed");
-      }
-      const wxData = await wxRes.json();
-      return { place, wxData };
-    }
-
-    function autoFillFromForecast(place, wxData) {
-      const daily = wxData.daily || {};
-      const hourly = wxData.hourly || {};
-
-      const snowfallMm = (daily.snowfall_sum && daily.snowfall_sum[0]) || 0;
-      const precipMm =
-        (daily.precipitation_sum && daily.precipitation_sum[0]) || 0;
-      const lowF =
-        (daily.temperature_2m_min && daily.temperature_2m_min[0]) || 32;
-
-      // Convert mm to inches for snow slider
-      const snowInches = snowfallMm / 25.4;
-      const sliderSnow = clamp(
-        Math.round(snowInches * 2) / 2,
-        parseFloat(snowRange.min),
-        parseFloat(snowRange.max)
-      );
-      snowRange.value = sliderSnow;
-      snowValue.textContent = sliderSnow + '"';
-
-      // Set overnight low temp slider
-      const sliderTemp = clamp(
-        Math.round(lowF),
-        parseFloat(tempRange.min),
-        parseFloat(tempRange.max)
-      );
-      tempRange.value = sliderTemp;
-      tempValue.textContent = sliderTemp + "°F";
-
-      // Guess ice risk
-      let iceRisk = "low";
-      if (precipMm > 0 && snowfallMm > 0 && snowfallMm < precipMm * 0.7) {
-        iceRisk = "medium";
-      }
-      if (precipMm > 0 && sliderTemp >= 28 && sliderTemp <= 34) {
-        iceRisk = "high";
-      }
-      document.getElementById("ice-risk").value = iceRisk;
-
-      // Figure out timing based on when precip is heaviest in first 24 hours
-      const times = hourly.time || [];
-      const snowfall = hourly.snowfall || [];
-      const precip = hourly.precipitation || [];
-
-      let maxIndex = 0;
-      let maxAmount = 0;
-      for (let i = 0; i < Math.min(times.length, 24); i++) {
-        const amount =
-          (typeof snowfall[i] === "number" ? snowfall[i] : 0) +
-          (typeof precip[i] === "number" ? precip[i] : 0);
-        if (amount > maxAmount) {
-          maxAmount = amount;
-          maxIndex = i;
-        }
-      }
-
-      let timing = "daytime";
-      if (times.length > 0) {
-        const t = times[maxIndex];
-        const hourStr = t.split("T")[1]?.slice(0, 2);
-        const hour = parseInt(hourStr, 10);
-        if (!Number.isNaN(hour)) {
-          if (hour <= 6) timing = "overnight";
-          else if (hour <= 11) timing = "morning";
-          else timing = "daytime";
-        }
-      }
-      document.getElementById("timing").value = timing;
-
-      // Update little status line
-      autoStatus.textContent =
-        "Using forecast for " +
-        (place.name || "your location") +
-        (place.country ? ", " + place.country : "") +
-        ". You can still tweak sliders.";
-      autoStatus.classList.remove("error");
-    }
-
-    autoBtn.addEventListener("click", async () => {
-      const locationInput = document.getElementById("location").value.trim();
-      if (!locationInput) {
-        autoStatus.textContent = "Type a city or ZIP first.";
-        autoStatus.classList.add("error");
-        return;
-      }
-
-      autoStatus.textContent = "Grabbing forecast…";
-      autoStatus.classList.remove("error");
-
-      try {
-        const { place, wxData } = await fetchForecastForLocation(locationInput);
-        autoFillFromForecast(place, wxData);
-      } catch (err) {
-        console.error(err);
-        autoStatus.textContent =
-          "Could not load weather for that location. You can still move sliders manually.";
-        autoStatus.classList.add("error");
-      }
-    });
-
-    const form = document.getElementById("snow-form");
-    const resultSection = document.getElementById("result");
-    const chanceEl = document.getElementById("chance");
-    const verdictEl = document.getElementById("verdict");
-    const breakdownEl = document.getElementById("breakdown");
-    const chipLocation = document.getElementById("chip-location");
-    const chipSchool = document.getElementById("chip-school");
-
-    form.addEventListener("submit", function (event) {
-      event.preventDefault();
-
-      const schoolLevel = document.getElementById("school-level").value;
-      const schoolLabel =
-        document.getElementById("school-level").options[
-          document.getElementById("school-level").selectedIndex
-        ].text;
-
-      const snow = Number(snowRange.value || 0);
-      const ice = document.getElementById("ice-risk").value;
-      const temp = Number(tempRange.value || 32);
-      const timing = document.getElementById("timing").value;
-      const rural = document.getElementById("rural").value;
-      const locationInput = document
-        .getElementById("location")
-        .value.trim();
-
-      let score = 0;
-      const notes = [];
-
-      // Snow amount
-      const cappedSnow = Math.min(snow, 14);
-      const snowPoints = cappedSnow * 5; // up to ~70
-      score += snowPoints;
-      notes.push(snow + '" of snow in the forecast (+' + snowPoints.toFixed(0) + ")");
-
-      // Ice risk
-      let iceBonus = 0;
-      if (ice === "medium") {
-        iceBonus = 10;
-        notes.push("Some ice / slush on roads (+10)");
-      } else if (ice === "high") {
-        iceBonus = 20;
-        notes.push("Freezing rain / serious ice risk (+20)");
-      } else {
-        notes.push("Mostly straight snow, little ice (+0)");
-      }
-      score += iceBonus;
-
-      // Temperature
-      let tempBonus = 0;
-      if (temp <= 10) {
-        tempBonus = 10;
-        notes.push("Brutally cold (≤ " + temp + "°F) (+10)");
-      } else if (temp <= 25) {
-        tempBonus = 5;
-        notes.push("Pretty cold (" + temp + "°F) (+5)");
-      } else {
-        notes.push("Not crazy cold (" + temp + "°F) (+0)");
-      }
-      score += tempBonus;
-
-      // Timing
-      let timingBonus = 0;
-      if (timing === "overnight") {
-        timingBonus = 15;
-        notes.push("Heaviest snow overnight before buses (+15)");
-      } else if (timing === "morning") {
-        timingBonus = 8;
-        notes.push("Still snowing around bus / commute time (+8)");
-      } else {
-        notes.push("Snow mainly during school or later (+0)");
-      }
-      score += timingBonus;
-
-      // Rural vs city
-      let ruralBonus = 0;
-      if (rural === "rural") {
-        ruralBonus = 10;
-        notes.push("Lots of back roads & buses (+10)");
-      } else {
-        notes.push("City/suburban roads get plowed faster (+0)");
-      }
-      score += ruralBonus;
-
-      // School level
-      let schoolBonus = 0;
-      if (schoolLevel === "elementary") {
-        schoolBonus = 10;
-        notes.push("Elementary kids → admin more cautious (+10)");
-      } else if (schoolLevel === "middle") {
-        schoolBonus = 5;
-        notes.push("Middle school (+5)");
-      } else if (schoolLevel === "high") {
-        schoolBonus = 0;
-        notes.push("High school (baseline, +0)");
-      } else {
-        schoolBonus = -10;
-        notes.push("Colleges almost never close (−10)");
-      }
-      score += schoolBonus;
-
-      // Final %
-      const percent = clamp(Math.round(score), 0, 100);
-      chanceEl.textContent = percent + "%";
-
-      let verdict;
-      if (percent >= 85) {
-        verdict = "🔥 Almost guaranteed snow day. Start planning the snacks.";
-      } else if (percent >= 65) {
-        verdict = "Looking really good. Might not need that alarm.";
-      } else if (percent >= 45) {
-        verdict = "Total coin flip. Check school alerts before bed.";
-      } else if (percent >= 25) {
-        verdict = "Leaning toward school, maybe a delay at best.";
-      } else {
-        verdict = "Yeah… probably school. Sorry. Charge your Chromebook.";
-      }
-      verdictEl.textContent = verdict;
-
-      breakdownEl.innerHTML = "";
-      notes.forEach((n) => {
-        const li = document.createElement("li");
-        li.textContent = n;
-        breakdownEl.appendChild(li);
-      });
-
-      chipLocation.textContent =
-        locationInput.length > 0 ? locationInput : "Your location";
-      chipSchool.textContent = schoolLabel;
-
-      resultSection.hidden = false;
-      resultSection.scrollIntoView({ behavior: "smooth", block: "start" });
-    });
-  </script>
+  <script src="app.js" defer></script>
 </body>
 </html>
